@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+  
+{% block content %}
+    <div class="container">
+          <h1>Cursos</h1>
+          <form method="POST">
+            {% csrf_token %}
+            <!--formulario que viene de las views-->
+            {{miFormulario.as_p}}
+            <button type="submit" class="btn btn-primary">Enviar</button>
+            </form>
+
+            <!--resultado-->
+            <div class="container">
+                <div class="row">
+                  {% for curso in cursos %}
+                    <div class="col-md-4">
+                        
+                            <div class="card" style="width: 18rem;">
+                              <div class="card-body">
+                                <h5 class="card-title">{{curso.titulo}}</h5>
+                                <a href="{{curso.url}}" class="card-link">Conocer curso</a>
+                            </div>
+                        </div>
+                      
+                      </div>
+            {% endfor %}
+                      </div>
+            
+
+    {% endblock %}
+    
