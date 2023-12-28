@@ -17,6 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from core import views
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
+from django.views.generic.base import TemplateView
+from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import PasswordChangeView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -29,4 +36,14 @@ urlpatterns = [
     path("buscar-historia/", views.buscar_historia, name="buscar_historia"),
     path("busquedaArtista/", views.busquedaArtista, name="busqueda_artista"),
     path("buscar-artista/", views.buscar_artista, name="buscar_artista"),
-]
+    path('blogs/', views.blogs_view, name='blogs'),
+    path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('registro/', views.registro_usuario, name='registro'),
+    path('accounts/profile/', login_required(TemplateView.as_view(template_name='core/profile.html')), name='profile'),
+    path('crear_blog/', views.crear_blog, name='crear_blog'),
+    path('editar_perfil/', views.editar_perfil_view, name="editar_perfil"),
+    path('crear_avatar/', views.crear_avatar_view, name="crear_avatar"),
+#     path('exito/', views.detalle_blog, name='blog'),
+#]
+ ]#+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

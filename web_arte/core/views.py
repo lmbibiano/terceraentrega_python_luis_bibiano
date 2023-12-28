@@ -1,7 +1,14 @@
-from django.shortcuts import render
-from .models import Curso, Historial, Artista
-from .forms import ArteFormulario, HistoriaFormulario, ArtistaFormulario
+from django.shortcuts import render, redirect
+from .models import Blog, Curso, Historial, Artista
+from .forms import ArteFormulario, HistoriaFormulario, ArtistaFormulario, BlogForm
 from django.http import HttpResponse
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from .forms import UserCreationFormulario, UserEditionFormulario
+from django.contrib.auth.views import PasswordChangeView
+from .models import Avatar
+from .forms import UserAvatarFormulario, UserAvatarFormulario# Importa el modelo Avatar desde tu archivo models.py
 
 
 # Create your views here.
@@ -118,3 +125,103 @@ def buscar_artista(request):
     else:
         respuesta3 = "No enviaste datos"
         return HttpResponse(respuesta3)
+    
+@login_required
+def blogs_view(request):
+    if request.method == 'POST':
+        form = BlogForm(request.POST)
+        if form.is_valid():
+            nuevo_blog = form.save(commit=False)
+            nuevo_blog.autor = request.user  # Asigna el autor actual
+            nuevo_blog.save()
+            return redirect('/')# return HttpResponseRedirect('/success/') por ejemplo
+    else:
+        # Si es una solicitud GET, crea una instancia del formulario vacío
+        form = BlogForm()
+
+    return render(request, "core/blogs.html", {'form': form})
+
+def registro_usuario(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')  # Redirecciona al usuario a la página de inicio de sesión después del registro
+    else:
+        form = UserCreationForm()
+    return render(request, 'core/registro.html', {'form': form})
+
+def crear_blog(request):
+    if request.method == 'POST':
+        # Obtener los datos del formulario
+        titulo = request.POST.get('titulo')
+        descripcion = request.POST.get('descripcion')
+
+        # Obtener el autor actual (usuario logueado)
+        autor = request.user
+
+        # Crear una nueva instancia de Blog y asignar el autor
+        nuevo_blog = Blog(titulo=titulo, descripcion=descripcion, autor=autor)
+        nuevo_blog.save()
+        return redirect('blogs.html')  # Redirige a donde desees después de guardar el blog
+    else:
+        return render(request, 'core/crear_blog.html')
+    
+    
+
+def editar_perfil_view(request):
+
+    usuario = request.user
+    avatar = Avatar.objects.filter(user=usuario).last()
+    avatar_url = avatar.imagen.url if avatar is not None else ""
+
+
+    if request.method == "GET":
+
+
+        valores_iniciales = {
+            "email": usuario.email,
+            "first_name": usuario.first_name,
+            "last_name": usuario.last_name
+        }
+
+
+        formulario = UserEditionFormulario(initial=valores_iniciales)
+        return render(
+            request,
+            "core/editar_perfil.html",
+            context={"form": formulario, "usuario": usuario, "avatar_url": avatar_url}
+            )
+    else:
+        formulario = UserEditionFormulario(request.POST)
+        if formulario.is_valid():
+            informacion = formulario.cleaned_data
+
+            usuario.email = informacion["email"]
+
+            usuario.set_password(informacion["password1"])
+
+            usuario.first_name = informacion["first_name"]
+            usuario.last_name = informacion["last_name"]
+            usuario.save()
+        return redirect("/")
+    
+
+def crear_avatar_view(request):
+
+    usuario = request.user
+
+    if request.method == "GET":
+        formulario = UserAvatarFormulario()
+        return render(
+            request,
+            "core/crear_avatar.html",
+            context={"form": formulario, "usuario": usuario}
+        )
+    else:
+        formulario = UserAvatarFormulario(request.POST, request.FILES)
+        if formulario.is_valid():
+            informacion = formulario.cleaned_data
+            modelo = Avatar(user=usuario, imagen=informacion["imagen"])
+            modelo.save()
+            return redirect("/")
